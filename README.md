@@ -3,6 +3,9 @@
 ```
 curl -L -O https://raw.githubusercontent.com/caojiaxia/xray-docker-tool/main/xray-tool.sh && sed -i 's/\r$//' xray-tool.sh && chmod +x xray-tool.sh && ./xray-tool.sh
 ```
+**部署完成后请参阅下面各方案参数设置**
+
+
 
 ***手动安装流程***
 
