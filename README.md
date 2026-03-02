@@ -149,7 +149,7 @@ docker compose up -d
 
 | 选项        | 说明                                                                      |
 | ----------- | --------------------------------------------------------------------      |
-| Domain Names | 解析到你主机的域名（解析到`Cloudflare`的域名请打开小黄云）                   |
+| Domain Names | 解析到你主机的域名 SSL/TLS配置必须为 `完全（严格） `（解析到`Cloudflare`的域名请打开小黄云）                   |
 | Scheme | http                                                                           |
 | Forward Hostname / IP   | 你的xray镜像名称或者直接填xray                                  |
 | Forward Port   | 默认10000  也可以自己设置  打开`config.template.json`修改`"port": 10000`  |
