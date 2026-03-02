@@ -143,7 +143,7 @@ docker compose up -d
 ```
 
 ###   NPM设置   
-**为了数据安全，请自行去CF做端口转发** 
+**为了数据安全，请自行去[cloudflare](https://www.cloudflare.com)做端口转发** 
    - 为你的NPM面板解析一个域名（你的服务器IP）域名的SSL/TLS配置为灵活 然后创建一个规则 把端口转发到：81
    - 路径：Rules→ Overview→ Origin Rules
 
