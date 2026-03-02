@@ -23,7 +23,7 @@ enable_bbr() {
     fi
 }
 
-# 终极链接生成器 (全参数适配)
+# 终极链接生成器 (严格证书 + ALPN适配)
 gen_link() {
     local TYPE=$1      # ws 或 xhttp
     local UUID=$2
@@ -40,40 +40,42 @@ gen_link() {
     # 基础链接
     local LINK="vless://$UUID@$ADDR:$PORT?path=$ENCODED_PATH&security=$SECURITY&encryption=none"
 
-    if [ "$TYPE" == "xhttp" ]; then
-        # 补全 XHTTP 核心参数：mode, sni, fp, allowInsecure
-        LINK="$LINK&type=xhttp&mode=packet"
-        if [ "$TLS" == "tls" ]; then
-            LINK="$LINK&sni=$ADDR&fp=chrome&allowInsecure=1"
+    # 只有开启 TLS 时才添加高级参数
+    if [ "$TLS" == "tls" ]; then
+        # sni: 域名 | fp: 浏览器指纹 | allowInsecure: 0 (严格验证) | alpn: 协议协商
+        local ADV_PARAMS="&sni=$ADDR&fp=chrome&allowInsecure=0&alpn=h2,http/1.1"
+        
+        if [ "$TYPE" == "xhttp" ]; then
+            LINK="${LINK}&type=xhttp&mode=packet${ADV_PARAMS}"
+        else
+            LINK="${LINK}&type=ws${ADV_PARAMS}"
         fi
     else
-        # 补全 WS 核心参数
-        LINK="$LINK&type=ws"
-        if [ "$TLS" == "tls" ]; then
-            LINK="$LINK&sni=$ADDR&fp=chrome&allowInsecure=1"
-        fi
+        # 非 TLS 模式仅添加类型
+        [ "$TYPE" == "xhttp" ] && LINK="${LINK}&type=xhttp&mode=packet" || LINK="${LINK}&type=ws"
     fi
 
     LINK="$LINK#$REMARK"
     
-    echo -e "${YELLOW}================ 终极节点配置 (全参数) ================${NC}"
-    echo -e "${GREEN}协议: VLESS + $TYPE${NC} | ${CYAN}TLS: $TLS${NC} | ${CYAN}模式: packet${NC}"
-    echo -e "SNI: $ADDR | 指纹: chrome | 允许不安全证书: 1"
-    echo -e "${YELLOW}-------------------------------------------------------${NC}"
-    echo -e "${CYAN}一键导入链接 (已适配 v2rayN / Shadowrocket / Clash):${NC}"
+    echo -e "${YELLOW}================ 终极节点配置 (严格安全版) ================${NC}"
+    echo -e "${GREEN}协议: VLESS + $TYPE${NC} | ${CYAN}TLS: $TLS${NC}"
+    echo -e "ALPN: h2,http/1.1 | 允许不安全证书: false (严格)"
+    echo -e "SNI: $ADDR | 指纹: chrome | 模式: packet"
+    echo -e "${YELLOW}-----------------------------------------------------------${NC}"
+    echo -e "${CYAN}客户端直接导入链接:${NC}"
     echo -e "${BLUE}$LINK${NC}"
-    echo -e "${YELLOW}=======================================================${NC}"
+    echo -e "${YELLOW}===========================================================${NC}"
 }
 
-# 方案 2: NPM + Xray (XHTTP 满配版)
+# 方案 2: NPM + Xray (XHTTP 严格版)
 install_npm() {
     enable_bbr
     local IP=$(curl -s ifconfig.me)
     mkdir -p ~/xray-npm && cd ~/xray-npm
     
-    read -p "请输入自定义 UUID (回车默认): " MY_UUID
+    read -p "请输入自定义 UUID  重要：不要使用默认UUID  (回车默认): " MY_UUID
     MY_UUID=${MY_UUID:-"c67e108d-b135-4acd-b0b4-33f2d18dff44"}
-    read -p "请输入 XHTTP 路径 (回车默认 /xhttp): " MY_XPATH
+    read -p "请输入 XHTTP 路径 重要：不要使用默认路径 (回车默认 /xhttp): " MY_XPATH
     MY_XPATH=${MY_XPATH:-"/xhttp"}
     
     echo -e "${CYAN}是否准备在 NPM 中配置域名和 SSL 证书？(y/n)${NC}"
@@ -116,13 +118,13 @@ EOF
     gen_link "xhttp" "$MY_UUID" "$MY_XPATH" "$ADDR" "$PORT" "$TLS" "NPM_XHTTP_$ADDR"
 }
 
-# 方案 1: Tunnel (WS 满配版)
+# 方案 1: Tunnel (WS 严格版)
 install_tunnel() {
     enable_bbr
     read -p "请输入 Tunnel Token: " TOKEN
-    read -p "请输入自定义 UUID (回车默认): " MY_UUID
+    read -p "请输入自定义 UUID 重要：不要使用默认UUID  (回车默认): " MY_UUID
     MY_UUID=${MY_UUID:-"c67e108d-b135-4acd-b0b4-33f2d18dff44"}
-    read -p "请输入 WS 路径 (回车默认 /ws): " MY_XPATH
+    read -p "请输入 WS 路径 重要：不要使用默认路径 (回车默认 /ws): " MY_XPATH
     MY_XPATH=${MY_XPATH:-"/ws"}
     read -p "请输入你在 CF 绑定的域名: " MY_DOMAIN
     
@@ -134,7 +136,7 @@ install_tunnel() {
     gen_link "ws" "$MY_UUID" "$MY_XPATH" "$MY_DOMAIN" "443" "tls" "CF_WS_$MY_DOMAIN"
 }
 
-# 菜单列表
+# 菜单部分（保持不变...）
 show_menu() {
     clear
     echo -e "${BLUE}====================================${NC}"
