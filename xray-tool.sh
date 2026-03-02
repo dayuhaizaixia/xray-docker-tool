@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ================= 配置区 =================
-GH_USER="你的GitHub用户名"  # <--- 修改这里！
+GH_USER="caojiaxia"  # <--- 你的GitHub用户名
 TUNNEL_IMAGE="ghcr.io/$GH_USER/xray-tunnel:latest"
 NPM_XRAY_IMAGE="ghcr.io/$GH_USER/xray-npm:latest"
 # ==========================================
