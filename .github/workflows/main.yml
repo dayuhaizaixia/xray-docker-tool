@@ -33,10 +33,12 @@ jobs:
       - name: Build and Push Tunnel
         uses: docker/build-push-action@v5
         with:
-          context: ./xray-tunnel
+          context: .
+          # 显式指定路径
+          file: ./xray-tunnel/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/xray-tunnel:latest
+          tags: ghcr.io/caojiaxia/xray-tunnel:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,12 +64,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker-Xray
+      - name: Build and Push Docker
         uses: docker/build-push-action@v5
         with:
-          context: ./xray-docker
+          context: .
+          # 显式指定路径
+          file: ./xray-docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/xray-docker:latest
+          tags: ghcr.io/caojiaxia/xray-docker:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
