@@ -42,7 +42,7 @@ services:
     environment:
       UUID: xxxxxx     #你的UUID
       XPATH: /xxxxxx   #你的路径
-      TUNNEL_TOKEN: 你的隧道Token
+      TUNNEL_TOKEN: xxxxxx    #你的隧道Token
 ```
 
 ### 启动命令
