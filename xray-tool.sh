@@ -13,55 +13,67 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# 1. 开启 BBR
+# 开启 BBR
 enable_bbr() {
     if ! sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"; then
+        echo -e "${BLUE}正在开启 BBR 加速...${NC}"
         echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
         echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
         sysctl -p
-        echo -e "${GREEN}BBR 已开启${NC}"
     fi
 }
 
-# 2. 链接生成器 (增强 TLS 支持)
+# 终极链接生成器 (全参数适配)
 gen_link() {
-    local TYPE=$1    # ws 或 xhttp
+    local TYPE=$1      # ws 或 xhttp
     local UUID=$2
     local XPATH=$3
     local ADDR=$4
     local PORT=$5
-    local TLS=$6     # tls 或 none
+    local TLS=$6       # tls 或 none
     local REMARK=$7
     
     local ENCODED_PATH=$(echo "$XPATH" | sed 's/\//%2F/g')
     local SECURITY=$TLS
     [ "$TLS" == "none" ] && SECURITY="none"
 
-    # 构造 VLESS 链接
-    local LINK="vless://$UUID@$ADDR:$PORT?path=$ENCODED_PATH&security=$SECURITY&encryption=none&type=$TYPE"
-    [ "$TYPE" == "xhttp" ] && LINK="$LINK&mode=packet"
+    # 基础链接
+    local LINK="vless://$UUID@$ADDR:$PORT?path=$ENCODED_PATH&security=$SECURITY&encryption=none"
+
+    if [ "$TYPE" == "xhttp" ]; then
+        # 补全 XHTTP 核心参数：mode, sni, fp, allowInsecure
+        LINK="$LINK&type=xhttp&mode=packet"
+        if [ "$TLS" == "tls" ]; then
+            LINK="$LINK&sni=$ADDR&fp=chrome&allowInsecure=1"
+        fi
+    else
+        # 补全 WS 核心参数
+        LINK="$LINK&type=ws"
+        if [ "$TLS" == "tls" ]; then
+            LINK="$LINK&sni=$ADDR&fp=chrome&allowInsecure=1"
+        fi
+    fi
+
     LINK="$LINK#$REMARK"
     
-    echo -e "${YELLOW}================ 节点配置信息 ================${NC}"
-    echo -e "${GREEN}协议: VLESS + $TYPE${NC} | ${CYAN}传输安全: $TLS${NC}"
-    echo -e "地址: ${BLUE}$ADDR${NC} | 端口: ${BLUE}$PORT${NC}"
-    echo -e "UUID: $UUID"
-    echo -e "路径: $XPATH"
-    echo -e "${YELLOW}----------------------------------------------${NC}"
-    echo -e "${CYAN}客户端直接导入链接:${NC}"
+    echo -e "${YELLOW}================ 终极节点配置 (全参数) ================${NC}"
+    echo -e "${GREEN}协议: VLESS + $TYPE${NC} | ${CYAN}TLS: $TLS${NC} | ${CYAN}模式: packet${NC}"
+    echo -e "SNI: $ADDR | 指纹: chrome | 允许不安全证书: 1"
+    echo -e "${YELLOW}-------------------------------------------------------${NC}"
+    echo -e "${CYAN}一键导入链接 (已适配 v2rayN / Shadowrocket / Clash):${NC}"
     echo -e "${BLUE}$LINK${NC}"
-    echo -e "${YELLOW}==============================================${NC}"
+    echo -e "${YELLOW}=======================================================${NC}"
 }
 
-# 方案 2: NPM + Xray (优化版)
+# 方案 2: NPM + Xray (XHTTP 满配版)
 install_npm() {
     enable_bbr
     local IP=$(curl -s ifconfig.me)
     mkdir -p ~/xray-npm && cd ~/xray-npm
     
-    read -p "请输入自定义 UUID 重要：不要使用默认UUID (回车默认): " MY_UUID
+    read -p "请输入自定义 UUID (回车默认): " MY_UUID
     MY_UUID=${MY_UUID:-"c67e108d-b135-4acd-b0b4-33f2d18dff44"}
-    read -p "请输入 XHTTP 路径 重要：不要使用默认路径 (回车默认 /xhttp): " MY_XPATH
+    read -p "请输入 XHTTP 路径 (回车默认 /xhttp): " MY_XPATH
     MY_XPATH=${MY_XPATH:-"/xhttp"}
     
     echo -e "${CYAN}是否准备在 NPM 中配置域名和 SSL 证书？(y/n)${NC}"
@@ -102,21 +114,15 @@ EOF
     docker compose up -d
     echo -e "${GREEN}部署成功！${NC}"
     gen_link "xhttp" "$MY_UUID" "$MY_XPATH" "$ADDR" "$PORT" "$TLS" "NPM_XHTTP_$ADDR"
-    
-    echo -e "\n${YELLOW}【NPM 后台后续操作提示】:${NC}"
-    echo -e "1. 访问 http://$IP:81 登录"
-    echo -e "2. 添加 Proxy Host: Domain 填 $ADDR, Host 填 xray, Port 填 10086"
-    echo -e "3. 开启 Websockets Support"
-    echo -e "4. 在 SSL 选项卡申请 Let's Encrypt 证书并勾选 Force SSL"
 }
 
-# 方案 1: Tunnel (保持逻辑)
+# 方案 1: Tunnel (WS 满配版)
 install_tunnel() {
     enable_bbr
     read -p "请输入 Tunnel Token: " TOKEN
-    read -p "请输入自定义 UUID 重要：不要使用默认UUID (回车默认): " MY_UUID
+    read -p "请输入自定义 UUID (回车默认): " MY_UUID
     MY_UUID=${MY_UUID:-"c67e108d-b135-4acd-b0b4-33f2d18dff44"}
-    read -p "请输入 WS 路径 重要：不要使用默认路径 (回车默认 /ws): " MY_XPATH
+    read -p "请输入 WS 路径 (回车默认 /ws): " MY_XPATH
     MY_XPATH=${MY_XPATH:-"/ws"}
     read -p "请输入你在 CF 绑定的域名: " MY_DOMAIN
     
@@ -128,7 +134,7 @@ install_tunnel() {
     gen_link "ws" "$MY_UUID" "$MY_XPATH" "$MY_DOMAIN" "443" "tls" "CF_WS_$MY_DOMAIN"
 }
 
-# 菜单略 (增加 BBR 选项 4)
+# 菜单列表
 show_menu() {
     clear
     echo -e "${BLUE}====================================${NC}"
