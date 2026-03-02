@@ -123,11 +123,19 @@ EOF
     
     gen_link "xhttp" "$MY_UUID" "$MY_XPATH" "$ADDR" "$PORT" "$TLS" "$MY_HOST" "NPM_XHTTP_$ADDR"
 
-    # NPM 提醒
-    echo -e "\n${RED}🚩 NPM 设置提醒：${NC}"
-    echo -e "1. 登录 http://$IP:81"
-    echo -e "2. Proxy Host -> Domain: $ADDR | Forward: xray:10000"
-    echo -e "3. 开启 Websockets & SSL (Force SSL & HTTP/2)"
+# ================= NPM 设置提醒 =================
+    echo -e "\n${RED}🚩 重要：请务必完成以下 NPM 后台设置，否则节点无法连接！${NC}"
+    echo -e "${YELLOW}1. 访问管理面板:${NC} http://$IP:81 (默认 admin@example.com / changeme)"
+    echo -e "${YELLOW}2. 添加 Proxy Host:${NC}"
+    echo -e "   - ${CYAN}Domain Names:${NC} $ADDR"
+    echo -e "   - ${CYAN}Forward Host:${NC} xray"
+    echo -e "   - ${CYAN}Forward Port:${NC} 10000"
+    echo -e "   - ${CYAN}Websockets Support:${NC} 开启 (必须开启)"
+    echo -e "${YELLOW}3. 配置 SSL:${NC}"
+    echo -e "   - 选择 SSL 选项卡，申请 Let's Encrypt 证书"
+    echo -e "   - 勾选 ${CYAN}Force SSL${NC} (强制 HTTPS)"
+    echo -e "   - 勾选 ${CYAN}HTTP/2 Support${NC}"
+    echo -e "${YELLOW}4. 高级设置 (可选):${NC} 若连接不稳定，可在 Advanced 粘贴 proxy_buffering off;"
     echo -e "${RED}======================================================${NC}\n"
 }
 
